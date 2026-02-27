@@ -1,0 +1,38 @@
+# Build and dependency directories
+node_modules/
+.vite/
+dist/
+build/
+bin/
+obj/
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# IDE and OS files
+.vscode/
+.idea/
+.DS_Store
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Python files
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.venv/
+env/
+.env/
+
+# Project specific
+Frontend/node_modules/
+Frontend/dist/
+Backend/__pycache__/
+Backend/venv/
+Backend/.env
+medilens-ai.zip
