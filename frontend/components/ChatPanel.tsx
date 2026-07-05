@@ -4,6 +4,7 @@ import ReactMarkdown from "react-markdown";
 import axios from "axios";
 import { Send, Bot, User, Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
+import { useAuth } from "@clerk/nextjs";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8001/api";
 
@@ -21,6 +22,7 @@ type Props = {
 };
 
 export default function ChatPanel({ tests, analytics, alert, explanation, language, patient_info, panels, dynamic_analysis, isGeneralMode }: Props) {
+    const { getToken } = useAuth();
     const [messages, setMessages] = useState<Message[]>([
         {
             role: "assistant",
@@ -81,7 +83,7 @@ export default function ChatPanel({ tests, analytics, alert, explanation, langua
         setLoading(true);
 
         try {
-            const token = localStorage.getItem("token");
+            const token = await getToken();
             const history = messages.slice(-6).map(m => ({ role: m.role, content: m.content }));
             const res = await axios.post(`${API}/chat`, {
                 question: q, tests, analytics, alert, explanation, language, history,

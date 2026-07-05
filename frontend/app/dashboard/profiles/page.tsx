@@ -82,6 +82,25 @@ export default function ProfilesPage() {
         }
     };
 
+    const handleDeleteProfile = async (id: string) => {
+        if (!confirm("Are you sure you want to delete this profile? Linked reports will not be deleted but they will no longer be associated with this family member.")) return;
+        try {
+            const token = await getToken();
+            const res = await fetch(`${apiUrl}/profiles/${id}`, {
+                method: "DELETE",
+                headers: { "Authorization": `Bearer ${token}` }
+            });
+            if (res.ok) {
+                fetchProfiles();
+            } else {
+                const err = await res.json().catch(() => ({}));
+                alert(err.detail || "Failed to delete profile.");
+            }
+        } catch (e) {
+            console.error("Delete profile failed", e);
+        }
+    };
+
     return (
         <div className="min-h-screen pb-20 fade-up">
             <div className="max-w-7xl mx-auto px-6 pt-8">
@@ -175,7 +194,10 @@ export default function ProfilesPage() {
                                             <span>View History</span>
                                             <ArrowRight className="w-4 h-4" />
                                         </Link>
-                                        <button className="p-2 rounded-lg text-slate-300 hover:text-danger hover:bg-danger/5 transition-all opacity-0 group-hover:opacity-100">
+                                        <button
+                                            onClick={() => handleDeleteProfile(profile.id)}
+                                            className="p-2 rounded-lg text-slate-300 hover:text-danger hover:bg-danger/5 transition-all opacity-0 group-hover:opacity-100"
+                                        >
                                             <Trash2 className="w-4 h-4" />
                                         </button>
                                     </div>

@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { Bot, FileText, Activity, Calendar, ShieldCheck, Search } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import ChatPanel from "@/components/ChatPanel";
+import { useAuth } from "@clerk/nextjs";
 
 type ReportHistoryItem = {
     id: string;
@@ -15,18 +16,54 @@ type ReportHistoryItem = {
 };
 
 export default function AssistantPage() {
+    const { getToken, isLoaded } = useAuth();
     const [reports, setReports] = useState<ReportHistoryItem[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [selectedReportId, setSelectedReportId] = useState<string | null>(null);
     const [searchQuery, setSearchQuery] = useState("");
 
     useEffect(() => {
+        if (!isLoaded) return;
         const fetchHistory = async () => {
+            const apiUrl = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8001/api").replace(/\/$/, "");
             try {
-                const res = await fetch("/api/reports");
+                const token = await getToken();
+                if (!token) {
+                    console.warn("No auth token — skipping history fetch");
+                    setIsLoading(false);
+                    return;
+                }
+                const res = await fetch(`${apiUrl}/dashboard/reports`, {
+                    headers: { "Authorization": `Bearer ${token}` }
+                });
                 if (res.ok) {
                     const data = await res.json();
-                    setReports(data);
+                    const mapped = data.map((r: any) => {
+                        let structured: any = {};
+                        try {
+                            structured = r.structured_data_json
+                                ? JSON.parse(r.structured_data_json)
+                                : {};
+                        } catch { }
+                        const info = structured.patient_info || {};
+                        return {
+                            id: r.id.toString(),
+                            patientName:
+                                info["Patient Name"] ||
+                                info.name ||
+                                info.patient_name ||
+                                r.type ||
+                                "Lab Report",
+                            reportDate: info["Report Date"] || info.report_date || null,
+                            overallRisk: r.risk || "Stable",
+                            totalTests: r.metrics?.length ?? 0,
+                            createdAt: r.created_at,
+                            fullPayload: typeof r.structured_data_json === 'string'
+                                ? r.structured_data_json
+                                : JSON.stringify(r.structured_data_json)
+                        };
+                    });
+                    setReports(mapped);
                 }
             } catch (e) {
                 console.error("Fetch history failed", e);
@@ -35,7 +72,7 @@ export default function AssistantPage() {
             }
         };
         fetchHistory();
-    }, []);
+    }, [isLoaded]);
 
     const filteredReports = reports.filter(r =>
         r.patientName.toLowerCase().includes(searchQuery.toLowerCase()) ||

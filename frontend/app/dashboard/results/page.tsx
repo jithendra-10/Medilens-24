@@ -470,6 +470,17 @@ export default function ResultsPage() {
                                     </p>
                                 </div>
                             )}
+                            {/* Audio Walkthrough */}
+                            {card_explanations.length > 0 && (
+                                <div className="mb-2">
+                                    <AudioPlayer
+                                        explanation={card_explanations
+                                            .map((c: CardExplanation) => `${c.parameter}: ${c.what_this_means}`)
+                                            .join(". ")}
+                                        language={exportLang || language || "English"}
+                                    />
+                                </div>
+                            )}
 
                             {/* Human-Kind Explanation Cards - RESPONSIVE GRID */}
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
