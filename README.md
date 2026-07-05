@@ -37,7 +37,7 @@ MediLens provides a premium, responsive digital environment for managing your fa
 
 ## 🚀 Core Modules & Architecture
 
-The application is structured into two main parts:
+The application is structured into a decoulped Client-Server architecture utilizing:
 
 ### 1. Frontend App (`/frontend`)
 Built with **Next.js (App Router)** and styled using modern, high-fidelity UI components.
@@ -51,6 +51,68 @@ A robust **FastAPI** service coordinating AI extraction, text-to-speech, and PDF
 - **RAG-Powered Insights**: Configured to query Groq's high-speed inference endpoints (Llama-3 models) using the OpenAI SDK.
 - **Speech Engine**: Dynamic audio summary generation powered by `gTTS`.
 - **ReportLab PDF Generator**: Creates custom summaries supporting complex multi-language scripts.
+
+---
+
+## 📊 System Architecture & Workflow Diagrams
+
+### 1. High-Level System Architecture
+```mermaid
+graph TD
+    User([User]) <--> NextJS[Next.js Frontend / React]
+    
+    subgraph Frontend [Next.js App Client]
+        NextJS <--> Clerk[Clerk Auth Client]
+        NextJS <--> Prisma[Prisma ORM]
+        Prisma <--> SQLiteFE[(Local SQLite DB)]
+    end
+    
+    NextJS <--> FastAPI[FastAPI Backend / Python]
+    
+    subgraph Backend [FastAPI Server]
+        FastAPI <--> SQLAlchemy[SQLAlchemy ORM]
+        SQLAlchemy <--> SQLiteBE[(App SQLite DB)]
+        FastAPI <--> PDFPlumber[pdfplumber / OCR Parser]
+        FastAPI <--> ReportLab[ReportLab PDF Engine]
+        FastAPI <--> GTTS[gTTS Speech Engine]
+        FastAPI <--> Groq[Groq RAG LLM Interface]
+    end
+    
+    Groq <--> GroqAPI[Groq Llama-3 API]
+```
+
+### 2. Lab Report Analysis Workflow Sequence
+```mermaid
+sequenceDiagram
+    autonumber
+    actor User
+    participant FE as Next.js UI
+    participant BE as FastAPI API
+    participant DB as SQLite Database
+    participant LLM as Groq Llama-3
+    
+    User->>FE: Upload Lab Report (PDF)
+    FE->>BE: POST /api/upload (Multipart + Auth Header)
+    Note over BE: 1. Extract raw text via pdfplumber
+    BE->>LLM: JSON-structured extraction prompt
+    LLM-->>BE: Returns structured biomarkers & patient info
+    Note over BE: 2. Dynamic range validation & anomaly checking
+    Note over BE: 3. Cross-report trend analysis (if previous uploaded)
+    BE->>DB: Save Report, Metrics & Trends
+    DB-->>BE: Return saved IDs
+    BE-->>FE: Return structured JSON payload
+    FE->>FE: Cache payload in localStorage & render Dashboard
+    User->>FE: Click "Listen" or "Consult AI"
+    FE->>BE: POST /api/tts (Narrate explanation)
+    BE-->>FE: Return MP3 Base64
+    FE->>User: Play voice summary
+    User->>FE: Chat with Assistant
+    FE->>BE: POST /api/chat (with context payload)
+    BE->>LLM: Prompt with medical safety guardrails
+    LLM-->>BE: Safe response
+    BE-->>FE: Answer response
+    FE->>User: Render Chat bubble
+```
 
 ---
 
@@ -149,6 +211,17 @@ A robust **FastAPI** service coordinating AI extraction, text-to-speech, and PDF
 When exporting reports in Hindi, Tamil, or Telugu, `ReportLab` requires a TrueType Font (TTF) that supports complex Unicode scripts.
 - **Windows**: The backend automatically locates and registers `Nirmala.ttf` (`C:\Windows\Fonts\nirmala.ttf`), which natively supports these languages.
 - **Linux / Production Deployments**: Ensure a compatible font is installed and set `NIRMALA_FONT_PATH=/path/to/font.ttf` in your backend `.env` file.
+
+---
+
+## 🔮 Future Roadmap & Implementations
+The following features are scheduled for development to enhance MediLens's clinical value and security:
+1. **Multi-Point Longitudinal Health Graphs**: Expand current dual-report comparisons into full historical trend lines spanning more than two reports.
+2. **Direct EHR / FHIR Integration**: Connect directly with lab systems and electronic health records utilizing HL7 FHIR protocols.
+3. **Advanced Visual Highlighting on Original PDFs**: Map extracted biomarker findings back to their exact visual coordinates on the uploaded PDF.
+4. **Local LLM Offline Inference**: Provide fully offline extraction using local models (e.g., Llama-3-8B via Ollama) to guarantee maximum privacy.
+5. **OCR Vision Support**: Support image uploads (JPEG/PNG) directly via multimodal Vision LLMs.
+6. **Medication & Appointment Reminders**: Proactive scheduling triggers based on flagged lab abnormalities.
 
 ---
 
