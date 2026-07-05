@@ -1,0 +1,51 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id              String           @id @default(cuid())
+  email           String           @unique
+  password        String
+  name            String
+  patientProfiles PatientProfile[]
+  reports         Report[]
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+}
+
+model PatientProfile {
+  id      String   @id @default(cuid())
+  name    String
+  age     Int?
+  gender  String?
+  userId  String
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reports Report[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Report {
+  id            String          @id @default(cuid())
+  userId        String
+  user          User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  profileId     String?
+  profile       PatientProfile? @relation(fields: [profileId], references: [id], onDelete: SetNull)
+  patientName   String          @default("Unknown Patient")
+  patientAge    Int?
+  patientGender String?
+  reportDate    String?
+  labName       String?
+  overallRisk   String          @default("Unknown")
+  totalTests    Int             @default(0)
+  abnormalTests Int             @default(0)
+  criticalTests Int             @default(0)
+  fullPayload   String // Store structured results as stringified JSON
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+}
